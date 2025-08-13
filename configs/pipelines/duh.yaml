@@ -1,0 +1,7 @@
+backbone: handnet
+seed: 43
+stages:
+- name: A_ce
+  loss: ce
+  epochs: 2
+  batch_size: 64

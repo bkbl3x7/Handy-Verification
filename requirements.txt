@@ -11,3 +11,5 @@ matplotlib>=3.8
 pillow>=10.2
 opencv-python>=4.9
 tqdm>=4.66
+PyYAML>=6.0
+streamlit>=1.24

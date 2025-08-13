@@ -12,7 +12,15 @@ Minimal, reproducible training pipeline for hand verification built with PyTorch
 ## Repo Layout
 ```
 .
-├── train_handnet.py            # Entry CLI for training/eval
+├── scripts/
+│   └── train_handnet.py        # Entry CLI for training/eval
+├── ui/
+│   ├── app.py                  # Streamlit main app
+│   ├── models.py               # Models (Featured) tab
+│   ├── library.py              # Library tab
+│   ├── train_eval.py           # Train/Eval (Advanced) tab
+│   ├── verify.py               # Verify tab
+│   └── utils.py                # UI helpers
 ├── handnet/
 │   ├── __init__.py             # Re-exports for convenient imports
 │   ├── utils.py                # device, seeding, CSV filters, subject split, image index
@@ -21,6 +29,12 @@ Minimal, reproducible training pipeline for hand verification built with PyTorch
 │   ├── losses.py               # Triplet loss (batch-hard lite)
 │   ├── train_loop.py           # train_one_epoch
 │   └── eval.py                 # embeddings, EER/AUC, ROC, metrics save
+├── configs/
+│   ├── datasets/               # One YAML per dataset
+│   │   └── palmar_clean.yaml
+│   └── pipelines/              # One YAML per pipeline (recipe)
+│       ├── res18_ce_to_triplet_pk16x4.yaml
+│       └── handnet_ce_to_triplet_pk16x4.yaml
 ├── requirements.txt            # Pip deps
 ├── environment.yml             # Conda env (optional)
 └── runs/                       # Output directory (created automatically)
@@ -57,14 +71,14 @@ conda activate <env-name-from-yml>
 From the repo root:
 ```
 # ResNet18 + Cross-Entropy on palmar
-python train_handnet.py \
+python scripts/train_handnet.py \
   --data_dir /path/to/images \
   --csv_path /path/to/HandInfo.csv \
   --backbone resnet18 --loss ce \
   --aspect palmar --epochs 15 --batch_size 64 --img_size 224 --device auto
 
 # Small CNN + Triplet on dorsal
-python train_handnet.py \
+python scripts/train_handnet.py \
   --data_dir /path/to/images \
   --csv_path /path/to/HandInfo.csv \
   --backbone handnet --loss triplet \
@@ -113,6 +127,15 @@ Each run writes to `runs/<backbone>_<loss>_<aspect>_<timestamp>/`:
 
 If you want, we can add: ImageNet input normalization, a cosine margin head (ArcFace/CosFace), and a P×K sampler for better triplet batches.
 
+## Streamlit UI
+- Launch: `streamlit run ui/app.py`
+- Tabs:
+  - Models: browse featured models by category.
+  - Library: searchable table of all runs; view metrics, args, ROC, and scores.
+  - Pipelines: manage datasets/pipelines YAMLs; Train tab consumes these.
+  - Train / Eval: select dataset + pipeline and run; shows live logs.
+  - Verify: simple similarity scoring with a required `.pt` model.
+
 ## Troubleshooting
 - ModuleNotFoundError: Run commands from the repo root so Python can import `handnet/`.
 - FileNotFoundError for images: Check that CSV `imageName` matches actual filenames (case-insensitive) under `--data_dir` and that names are unique when lowercased.
@@ -121,4 +144,3 @@ If you want, we can add: ImageNet input normalization, a cosine margin head (Arc
 
 ## Acknowledgements
 Built with PyTorch, TorchVision, scikit-learn, and Matplotlib.
-

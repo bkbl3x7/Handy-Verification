@@ -1,0 +1,12 @@
+backbone: resnet18
+seed: 42
+stages:
+  - name: A_ce
+    loss: ce
+    epochs: 10
+    batch_size: 64
+  - name: B_triplet_pk16x4
+    loss: triplet
+    pk: "16x4"
+    epochs: 30
+

@@ -1,0 +1,7 @@
+{
+  "backbones": ["resnet18", "handnet"],
+  "losses": ["ce", "triplet"],
+  "aspects": ["palmar", "dorsal", "any"],
+  "pk_presets": ["16x4", "8x8", "32x2", ""]
+}
+

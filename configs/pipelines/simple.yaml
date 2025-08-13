@@ -1,0 +1,7 @@
+backbone: resnet18
+seed: 42
+stages:
+- name: A_ce
+  loss: ce
+  epochs: 10
+  batch_size: 64

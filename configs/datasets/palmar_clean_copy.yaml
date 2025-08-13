@@ -1,0 +1,6 @@
+data_dir: data/Hands
+csv_path: data/HandInfo.csv
+aspect: palmar
+clean_only: true
+img_size: 224
+min_images: 3
