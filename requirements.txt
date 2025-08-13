@@ -1,15 +1,13 @@
 # Cross-platform requirements for training/eval
-# Install PyTorch first if you prefer (platform-specific wheels), then:
-# pip install -r requirements.txt
+# Tip: You can install platform-specific PyTorch wheels first, then:
+#   pip install -r requirements.txt
 
 torch>=2.2
 torchvision>=0.17
-torchaudio>=2.2
 pandas>=2.1
+numpy>=1.26
 scikit-learn>=1.4
 matplotlib>=3.8
 pillow>=10.2
-opencv-python>=4.9
-tqdm>=4.66
 PyYAML>=6.0
 streamlit>=1.24

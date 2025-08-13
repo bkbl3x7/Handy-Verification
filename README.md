@@ -1,6 +1,6 @@
 # Hand Verification Training (HandNet)
 
-Minimal, reproducible training pipeline for hand verification built with PyTorch. Works on Apple Silicon (MPS), CUDA, or CPU. Provides a small custom CNN or a ResNet18 backbone, cross-entropy or triplet loss, and EER/AUC evaluation with 2-image enrollment and cosine similarity.
+Minimal training pipeline for hand verification built with PyTorch. Runs on Apple Silicon (MPS), CUDA, or CPU. Includes a small custom CNN or a ResNet18 backbone, cross-entropy or triplet loss, and EER/AUC evaluation with 2-image enrollment and cosine similarity. A Streamlit UI provides Models, Library, Pipelines, Train/Eval, Verify, and Docs tabs.
 
 ## Features
 - Simple CLI: one script to train/evaluate.
@@ -13,12 +13,13 @@ Minimal, reproducible training pipeline for hand verification built with PyTorch
 ```
 .
 ├── scripts/
-│   └── train_handnet.py        # Entry CLI for training/eval
+│   └── train_handnet.py        # CLI entry for training/eval
 ├── ui/
 │   ├── app.py                  # Streamlit main app
 │   ├── models.py               # Models (Featured) tab
 │   ├── library.py              # Library tab
-│   ├── train_eval.py           # Train/Eval (Advanced) tab
+│   ├── pipelines.py            # Create/edit datasets & pipelines (YAML)
+│   ├── train_eval.py           # Train/Eval (run pipelines via CLI)
 │   ├── verify.py               # Verify tab
 │   └── utils.py                # UI helpers
 ├── handnet/
@@ -28,22 +29,19 @@ Minimal, reproducible training pipeline for hand verification built with PyTorch
 │   ├── models.py               # HandNetSmall, ResNet18 embedder, classifier head
 │   ├── losses.py               # Triplet loss (batch-hard lite)
 │   ├── train_loop.py           # train_one_epoch
+│   ├── samplers.py             # P×K batch sampler for triplet
 │   └── eval.py                 # embeddings, EER/AUC, ROC, metrics save
 ├── configs/
 │   ├── datasets/               # One YAML per dataset
-│   │   └── palmar_clean.yaml
 │   └── pipelines/              # One YAML per pipeline (recipe)
-│       ├── res18_ce_to_triplet_pk16x4.yaml
-│       └── handnet_ce_to_triplet_pk16x4.yaml
 ├── requirements.txt            # Pip deps
-├── environment.yml             # Conda env (optional)
-└── runs/                       # Output directory (created automatically)
+└── experiments/                # Output root for runs
 ```
 
 ## Requirements
 - Python 3.9+ recommended
-- PyTorch + TorchVision (installed via `requirements.txt` or `environment.yml`)
-- Optional GPU: CUDA or Apple Silicon (MPS). The script auto-selects the best device.
+- PyTorch + TorchVision (install via `requirements.txt`)
+- Optional GPU: CUDA or Apple Silicon (MPS). The code auto-selects the best device.
 
 ## Setup
 Using pip (recommended):
@@ -53,11 +51,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Using conda:
-```
-conda env create -f environment.yml
-conda activate <env-name-from-yml>
-```
+Conda users: create an env and install the same packages manually; no `environment.yml` is provided.
 
 ## Data Preparation
 - `--csv_path` should point to a CSV with at least these columns:
@@ -87,10 +81,10 @@ python scripts/train_handnet.py \
 
 Evaluate only (given weights):
 ```
-python train_handnet.py \
+python scripts/train_handnet.py \
   --data_dir /path/to/images \
   --csv_path /path/to/HandInfo.csv \
-  --backbone resnet18 --eval_only --weights runs/<your_run>/best.pt \
+  --backbone resnet18 --eval_only --weights experiments/<...>/<file>.pt \
   --aspect palmar --img_size 224 --device auto
 ```
 
@@ -109,14 +103,20 @@ python train_handnet.py \
 - `--device`: `auto` | `cpu` | `cuda` | `mps`.
 - `--eval_only`: Skip training and only evaluate given `--weights`.
 - `--weights`: Path to a `.pt` file (for `--eval_only`).
-- `--out_dir`: Output directory for run artifacts (default: `runs`).
+- `--init_from`: Initialize backbone weights from a prior `.pt`.
+- `--pk`: Use P×K sampler for triplet, e.g. `16x4`.
+- `--exp_root`: Output root (default: `experiments`).
+- `--exp_name` / `--stage`: Experiment grouping; used in output paths.
+- `--run_slug`: If set, write under `experiments/<run_slug>/`.
 
 ## Outputs
-Each run writes to `runs/<backbone>_<loss>_<aspect>_<timestamp>/`:
-- `best.pt`: Best model state by dev EER (includes classifier state when CE).
-- `scores.csv`: Test pair scores (label, score).
-- `metrics.json`: Dev/Test EER and AUC.
-- `roc.png`: ROC curve for the test set.
+CLI runs write under `experiments/<exp_name>/<backbone>/<stage>/<timestamp>_seed<seed>/` with files named by timestamp and tags:
+- `<base>.pt`: Best model state by dev EER (includes classifier state when CE).
+- `<base>.json`: Dev/Test EER and AUC.
+- `<base>.csv`: Test pair scores (label, score).
+- `<base>.png`: ROC curve for the test set.
+
+Pipelines UI writes runs under `experiments/<run_slug>/` with a `manifest.json` that snapshots the dataset/pipeline configs and stage artifacts.
 
 ## Tips to Improve EER
 - Use `--clean_only` if those quality flags exist in your CSV.
@@ -130,11 +130,12 @@ If you want, we can add: ImageNet input normalization, a cosine margin head (Arc
 ## Streamlit UI
 - Launch: `streamlit run ui/app.py`
 - Tabs:
-  - Models: browse featured models by category.
-  - Library: searchable table of all runs; view metrics, args, ROC, and scores.
-  - Pipelines: manage datasets/pipelines YAMLs; Train tab consumes these.
-  - Train / Eval: select dataset + pipeline and run; shows live logs.
-  - Verify: simple similarity scoring with a required `.pt` model.
+  - Models: featured models from finished runs.
+  - Library: table of all runs; download or delete.
+  - Pipelines: create/edit dataset and pipeline YAML files.
+  - Train / Eval: select a dataset + pipeline and run (logs stream live).
+  - Verify: cosine similarity with a selected `.pt` model.
+  - Docs: quick help inside the UI.
 
 ## Troubleshooting
 - ModuleNotFoundError: Run commands from the repo root so Python can import `handnet/`.
